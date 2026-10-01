@@ -1,0 +1,300 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare project files
+        run: |
+          mkdir -p lib
+          for f in main ai; do
+            if [ ! -f lib/$f.dart ]; then
+              if [ -f $f.dart ]; then
+                cp $f.dart lib/$f.dart
+              elif [ -f .github/workflows/$f.dart ]; then
+                cp .github/workflows/$f.dart lib/$f.dart
+              fi
+            fi
+          done
+          test -f lib/main.dart || (echo "MAIN.DART NAHI MILI" && exit 1)
+          test -f lib/ai.dart || (echo "AI.DART NAHI MILI" && exit 1)
+          if [ ! -f pubspec.yaml ]; then
+            cat > pubspec.yaml << 'EOF'
+          name: call_ai_test
+          description: Call AI test.
+          publish_to: 'none'
+          version: 1.0.0+1
+
+          environment:
+            sdk: '>=3.0.0 <4.0.0'
+
+          dependencies:
+            flutter:
+              sdk: flutter
+            shared_preferences: ^2.2.0
+            http: ^1.2.0
+            speech_to_text: ^7.0.0
+            flutter_tts: ^4.2.0
+
+          flutter:
+            uses-material-design: true
+          EOF
+          fi
+          ls -la . lib
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Create Android project files
+        run: |
+          flutter create --platforms=android --project-name call_ai_test tmp_app
+          cp -r tmp_app/android android
+          sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.RECORD_AUDIO"/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>\n    <application#' android/app/src/main/AndroidManifest.xml
+          if grep -q "<queries>" android/app/src/main/AndroidManifest.xml; then
+            sed -i 's#<queries>#<queries>\n    <intent><action android:name="android.speech.RecognitionService"/></intent>\n    <intent><action android:name="android.intent.action.TTS_SERVICE"/></intent>#' android/app/src/main/AndroidManifest.xml
+          else
+            sed -i 's#<application#<queries><intent><action android:name="android.speech.RecognitionService"/></intent><intent><action android:name="android.intent.action.TTS_SERVICE"/></intent></queries>\n    <application#' android/app/src/main/AndroidManifest.xml
+          fi
+          sed -i 's#</activity>#<intent-filter><action android:name="android.intent.action.DIAL"/><category android:name="android.intent.category.DEFAULT"/></intent-filter><intent-filter><action android:name="android.intent.action.DIAL"/><category android:name="android.intent.category.DEFAULT"/><data android:scheme="tel"/></intent-filter></activity>#' android/app/src/main/AndroidManifest.xml
+          sed -i 's#</application>#    <service android:name="com.example.call_ai_test.CallService" android:permission="android.permission.BIND_INCALL_SERVICE" android:exported="true"><meta-data android:name="android.telecom.IN_CALL_SERVICE_UI" android:value="true"/><intent-filter><action android:name="android.telecom.InCallService"/></intent-filter></service>\n    <receiver android:name="com.example.call_ai_test.CallActionReceiver" android:exported="false"/>\n    </application>#' android/app/src/main/AndroidManifest.xml
+          grep -q "RECORD_AUDIO" android/app/src/main/AndroidManifest.xml || (echo "MANIFEST AUDIO FAIL" && exit 1)
+          grep -q "RecognitionService" android/app/src/main/AndroidManifest.xml || (echo "MANIFEST QUERIES FAIL" && exit 1)
+          grep -q "android.intent.action.DIAL" android/app/src/main/AndroidManifest.xml || (echo "MANIFEST DIAL FAIL" && exit 1)
+          grep -q "BIND_INCALL_SERVICE" android/app/src/main/AndroidManifest.xml || (echo "MANIFEST SERVICE FAIL" && exit 1)
+
+      - name: Add native code
+        run: |
+          rm -f $(find android/app/src/main -name 'MainActivity.*')
+          mkdir -p android/app/src/main/kotlin/com/example/call_ai_test
+          cat > android/app/src/main/kotlin/com/example/call_ai_test/MainActivity.kt << 'KOTLIN'
+          package com.example.call_ai_test
+
+          import android.app.Activity
+          import android.app.role.RoleManager
+          import android.content.Context
+          import android.content.Intent
+          import android.os.Build
+          import android.telecom.Call
+          import android.telecom.CallAudioState
+          import io.flutter.embedding.android.FlutterActivity
+          import io.flutter.embedding.engine.FlutterEngine
+          import io.flutter.plugin.common.MethodChannel
+
+          class MainActivity : FlutterActivity() {
+              private var pendingRole: MethodChannel.Result? = null
+
+              private fun prefs() = getSharedPreferences("callai", Context.MODE_PRIVATE)
+
+              override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+                  super.configureFlutterEngine(flutterEngine)
+                  MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "callai/native")
+                      .setMethodCallHandler { call, result ->
+                          when (call.method) {
+                              "isDialer" -> result.success(isDialer())
+                              "requestDialer" -> requestDialer(result)
+                              "setAiMode" -> {
+                                  prefs().edit().putBoolean("ai_mode", call.arguments as Boolean).apply()
+                                  result.success(true)
+                              }
+                              "getAiMode" -> result.success(prefs().getBoolean("ai_mode", false))
+                              "callState" -> {
+                                  val c = CallHolder.call
+                                  if (c == null) {
+                                      result.success(mapOf("state" to -1, "number" to ""))
+                                  } else {
+                                      result.success(mapOf("state" to c.state, "number" to (c.details?.handle?.schemeSpecificPart ?: "")))
+                                  }
+                              }
+                              "answer" -> {
+                                  CallHolder.call?.answer(0)
+                                  result.success(true)
+                              }
+                              "hangup" -> {
+                                  val c = CallHolder.call
+                                  if (c != null) {
+                                      if (c.state == Call.STATE_RINGING) c.reject(false, null) else c.disconnect()
+                                  }
+                                  result.success(true)
+                              }
+                              "speaker" -> {
+                                  CallHolder.service?.setAudioRoute(CallAudioState.ROUTE_SPEAKER)
+                                  result.success(true)
+                              }
+                              "requestNotif" -> {
+                                  if (Build.VERSION.SDK_INT >= 33) {
+                                      requestPermissions(arrayOf("android.permission.POST_NOTIFICATIONS"), 11)
+                                  }
+                                  result.success(true)
+                              }
+                              else -> result.notImplemented()
+                          }
+                      }
+              }
+
+              private fun isDialer(): Boolean {
+                  if (Build.VERSION.SDK_INT >= 29) {
+                      val rm = getSystemService(Context.ROLE_SERVICE) as RoleManager
+                      return rm.isRoleHeld(RoleManager.ROLE_DIALER)
+                  }
+                  return false
+              }
+
+              private fun requestDialer(result: MethodChannel.Result) {
+                  if (Build.VERSION.SDK_INT >= 29) {
+                      val rm = getSystemService(Context.ROLE_SERVICE) as RoleManager
+                      if (rm.isRoleAvailable(RoleManager.ROLE_DIALER) && !rm.isRoleHeld(RoleManager.ROLE_DIALER)) {
+                          pendingRole = result
+                          startActivityForResult(rm.createRequestRoleIntent(RoleManager.ROLE_DIALER), 3001)
+                          return
+                      }
+                  }
+                  result.success(isDialer())
+              }
+
+              override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+                  super.onActivityResult(requestCode, resultCode, data)
+                  if (requestCode == 3001) {
+                      pendingRole?.success(isDialer())
+                      pendingRole = null
+                  }
+              }
+          }
+          KOTLIN
+          cat > android/app/src/main/kotlin/com/example/call_ai_test/CallService.kt << 'KOTLIN'
+          package com.example.call_ai_test
+
+          import android.app.Notification
+          import android.app.NotificationChannel
+          import android.app.NotificationManager
+          import android.app.PendingIntent
+          import android.content.Context
+          import android.content.Intent
+          import android.os.Build
+          import android.os.Handler
+          import android.os.Looper
+          import android.telecom.Call
+          import android.telecom.CallAudioState
+          import android.telecom.InCallService
+
+          object CallHolder {
+              var call: Call? = null
+              var service: InCallService? = null
+          }
+
+          class CallService : InCallService() {
+              private val handler = Handler(Looper.getMainLooper())
+
+              override fun onCallAdded(call: Call) {
+                  super.onCallAdded(call)
+                  CallHolder.call = call
+                  CallHolder.service = this
+                  val ai = getSharedPreferences("callai", Context.MODE_PRIVATE).getBoolean("ai_mode", false)
+                  call.registerCallback(object : Call.Callback() {
+                      override fun onStateChanged(c: Call, state: Int) {
+                          if (state == Call.STATE_ACTIVE && ai) {
+                              setAudioRoute(CallAudioState.ROUTE_SPEAKER)
+                          }
+                          if (state != Call.STATE_RINGING) {
+                              cancelNotif()
+                          }
+                      }
+                  })
+                  if (call.state == Call.STATE_RINGING) {
+                      if (ai) {
+                          handler.postDelayed({
+                              if (call.state == Call.STATE_RINGING) call.answer(0)
+                          }, 3000)
+                      } else {
+                          showRing()
+                      }
+                  }
+              }
+
+              override fun onCallRemoved(call: Call) {
+                  super.onCallRemoved(call)
+                  if (CallHolder.call == call) {
+                      CallHolder.call = null
+                  }
+                  cancelNotif()
+              }
+
+              private fun cancelNotif() {
+                  try {
+                      val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                      nm.cancel(4321)
+                  } catch (e: Exception) {
+                  }
+              }
+
+              private fun pi(action: String, code: Int): PendingIntent {
+                  val i = Intent(this, CallActionReceiver::class.java)
+                  i.action = action
+                  return PendingIntent.getBroadcast(this, code, i, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+              }
+
+              private fun showRing() {
+                  try {
+                      val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                      if (Build.VERSION.SDK_INT >= 26) {
+                          nm.createNotificationChannel(
+                              NotificationChannel("callai_ring", "Incoming call", NotificationManager.IMPORTANCE_HIGH)
+                          )
+                      }
+                      val b = if (Build.VERSION.SDK_INT >= 26) {
+                          Notification.Builder(this, "callai_ring")
+                      } else {
+                          Notification.Builder(this)
+                      }
+                      b.setSmallIcon(android.R.drawable.ic_menu_call)
+                      b.setContentTitle("Incoming call")
+                      b.setContentText("Uthane ya kaatne ke liye neeche dabao")
+                      b.addAction(android.R.drawable.ic_menu_call, "Uthao", pi("ANSWER", 1))
+                      b.addAction(android.R.drawable.ic_delete, "Kaato", pi("REJECT", 2))
+                      nm.notify(4321, b.build())
+                  } catch (e: Exception) {
+                  }
+              }
+          }
+          KOTLIN
+          cat > android/app/src/main/kotlin/com/example/call_ai_test/CallActionReceiver.kt << 'KOTLIN'
+          package com.example.call_ai_test
+
+          import android.content.BroadcastReceiver
+          import android.content.Context
+          import android.content.Intent
+          import android.telecom.Call
+
+          class CallActionReceiver : BroadcastReceiver() {
+              override fun onReceive(context: Context, intent: Intent) {
+                  val c = CallHolder.call ?: return
+                  when (intent.action) {
+                      "ANSWER" -> c.answer(0)
+                      "REJECT" -> {
+                          if (c.state == Call.STATE_RINGING) c.reject(false, null) else c.disconnect()
+                      }
+                  }
+              }
+          }
+          KOTLIN
+
+      - run: flutter pub get
+
+      - run: flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: call-ai-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
