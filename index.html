@@ -1,97 +1,186 @@
 
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>My Ludo Game</title>
+<meta name="theme-color" content="#101827">
+<title>Ludo Star - Offline</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#101827;color:white;font-family:Arial,sans-serif;text-align:center;padding:16px}
-h1{color:#ffd54a;margin:8px}
-p{color:#cbd5e1}
-.board{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);width:min(92vw,420px);aspect-ratio:1;margin:20px auto;background:white;border:4px solid white;gap:2px}
-.home{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:8px;padding:12px;place-items:center}
-.red{background:#ef4444}.green{background:#22c55e}.yellow{background:#facc15}.blue{background:#3b82f6}
-.spot{width:75%;height:75%;background:white;border-radius:8px;display:grid;grid-template-columns:1fr 1fr;place-items:center;gap:4px;padding:6px}
-.token{width:70%;aspect-ratio:1;border-radius:50%;border:3px solid #ddd;box-shadow:0 2px 4px #555}
-.center{background:#e5e7eb;color:#111;display:grid;place-items:center;font-size:clamp(16px,5vw,26px);font-weight:bold}
-.track{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:2px;background:#e5e7eb}
-.track div{background:white}
-.controls{max-width:420px;margin:auto}
-button{border:0;border-radius:12px;padding:14px 20px;font-size:17px;font-weight:bold;cursor:pointer}
-#roll{background:#ffd54a;color:#111;width:100%;margin:8px 0}
-#dice{font-size:44px;margin:8px}
-.players{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
-.player{padding:10px;border-radius:10px;background:#263449}
-#status{color:#ffd54a;font-weight:bold;min-height:24px}
+body{margin:0;background:#101827;color:#fff;font-family:Arial,sans-serif;text-align:center;padding:14px}
+h1{margin:8px;color:#ffdb58;font-size:28px}
+.sub{color:#b8c5d9;font-size:14px}
+.card{max-width:480px;margin:14px auto;background:#1d293b;padding:12px;border-radius:18px}
+svg{display:block;width:100%;height:auto;touch-action:manipulation}
+button{border:0;border-radius:12px;padding:13px;font-size:16px;font-weight:bold;cursor:pointer}
+#roll{background:#ffdb58;color:#111827;width:100%;font-size:19px}
+#dice{font-size:44px;margin:5px}
+#status{min-height:42px;color:#ffdb58;font-weight:bold;display:grid;place-items:center}
+.players{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.player{padding:10px;border-radius:10px;background:#29384d;font-weight:bold}
+.red{color:#ff7777}.green{color:#67ed9b}.yellow{color:#ffe875}.blue{color:#7eb8ff}
+#reset{background:#334155;color:white;margin-top:12px;width:100%}
+.note{font-size:12px;color:#aab8cc;line-height:1.5}
 </style>
 </head>
 <body>
-<h1>🎲 MY LUDO GAME</h1>
-<p>Ek phone par 2–4 players khelo!</p>
+<h1>🎲 LUDO STAR</h1>
+<div class="sub">OFFLINE • 2–4 PLAYERS • SAME PHONE</div>
 
-<div class="board">
-  <div class="home red"><div class="spot"><i class="token"></i><i class="token"></i><i class="token"></i><i class="token"></i></div></div>
-  <div class="track" id="top"></div>
-  <div class="home green"><div class="spot"><i class="token"></i><i class="token"></i><i class="token"></i><i class="token"></i></div></div>
-  <div class="track" id="left"></div>
-  <div class="center">🏁<br> LUDO</div>
-  <div class="track" id="right"></div>
-  <div class="home yellow"><div class="spot"><i class="token"></i><i class="token"></i><i class="token"></i><i class="token"></i></div></div>
-  <div class="track" id="bottom"></div>
-  <div class="home blue"><div class="spot"><i class="token"></i><i class="token"></i><i class="token"></i><i class="token"></i></div></div>
+<div class="card">
+<svg id="board" viewBox="0 0 420 420" aria-label="Ludo board"></svg>
+<div id="dice">🎲</div>
+<div id="status">Red ki baari! Dice roll karo.</div>
+<button id="roll" onclick="rollDice()">🎲 ROLL DICE</button>
+<div class="players">
+<div class="player red">🔴 RED: <span id="score0">0</span></div>
+<div class="player green">🟢 GREEN: <span id="score1">0</span></div>
+<div class="player yellow">🟡 YELLOW: <span id="score2">0</span></div>
+<div class="player blue">🔵 BLUE: <span id="score3">0</span></div>
 </div>
-
-<div class="controls">
-  <div id="dice">🎲</div>
-  <div id="status">Red ki baari!</div>
-  <button id="roll" onclick="rollDice()">🎲 Dice Roll Karo</button>
-  <div class="players">
-    <div class="player">🔴 Red: <span id="s0">0</span></div>
-    <div class="player">🟢 Green: <span id="s1">0</span></div>
-    <div class="player">🟡 Yellow: <span id="s2">0</span></div>
-    <div class="player">🔵 Blue: <span id="s3">0</span></div>
-  </div>
-  <button onclick="resetGame()">🔄 New Game</button>
+<button id="reset" onclick="resetGame()">↻ NEW GAME</button>
+<p class="note">6 aane par goti ghar se niklegi. Goti chalane ke liye us par tap karo. Safe squares par goti nahi kategi.</p>
 </div>
 
 <script>
-const colors=["Red","Green","Yellow","Blue"];
-const diceFaces=["⚀","⚁","⚂","⚃","⚄","⚅"];
-let turn=0, scores=[0,0,0,0], busy=false;
+const NS="http://www.w3.org/2000/svg";
+const names=["Red","Green","Yellow","Blue"];
+const colors=["#ef4444","#22c55e","#facc15","#3b82f6"];
+const safe=[0,8,13,21,26,34,39,47];
+const players=names.map((name,p)=>({
+ name, tokens:[-1,-1,-1,-1], start:p*13
+}));
+let turn=0, dice=0, rolled=false, finished=false;
 
-document.querySelectorAll(".track").forEach(track=>{
-  for(let i=0;i<9;i++){
-    const cell=document.createElement("div");
-    track.appendChild(cell);
+function el(tag,attrs={},parent=document.getElementById("board")){
+ const e=document.createElementNS(NS,tag);
+ for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);
+ parent.appendChild(e);return e;
+}
+function pos(p){
+ const angle=-Math.PI/2+(p%52)*2*Math.PI/52;
+ return [210+132*Math.cos(angle),210+132*Math.sin(angle)];
+}
+function homePos(p,t){
+ const centers=[[65,65],[355,65],[355,355],[65,355]];
+ const [x,y]=centers[p];
+ return [x+(t%2)*24-12,y+Math.floor(t/2)*24-12];
+}
+function lanePos(p,step){
+ const angle=-Math.PI/2+p*Math.PI/2;
+ const r=112-step*17;
+ return [210+r*Math.cos(angle),210+r*Math.sin(angle)];
+}
+function tokenPos(p,t){
+ const v=players[p].tokens[t];
+ if(v<0)return homePos(p,t);
+ if(v<52)return pos((players[p].start+v)%52);
+ return lanePos(p,v-51);
+}
+function draw(){
+ const s=document.getElementById("board");
+ s.innerHTML="";
+ el("rect",{x:2,y:2,width:416,height:416,rx:18,fill:"#f8fafc"});
+ const homes=[[65,65],[355,65],[355,355],[65,355]];
+ homes.forEach(([x,y],p)=>{
+  el("rect",{x:x-48,y:y-48,width:96,height:96,rx:13,fill:colors[p]});
+  el("rect",{x:x-34,y:y-34,width:68,height:68,rx:9,fill:"#fff"});
+  for(let t=0;t<4;t++){
+   const [tx,ty]=homePos(p,t);
+   el("circle",{cx:tx,cy:ty,r:9,fill:colors[p],stroke:"#253044","stroke-width":1.5});
   }
-});
-
+ });
+ for(let i=0;i<52;i++){
+  const [x,y]=pos(i);
+  el("circle",{cx:x,cy:y,r:7.5,fill:safe.includes(i)?"#ffe7a0":"#dce3ed",stroke:"#64748b","stroke-width":1});
+ }
+ for(let p=0;p<4;p++){
+  for(let j=0;j<6;j++){
+   const [x,y]=lanePos(p,j+1);
+   el("circle",{cx:x,cy:y,r:7,fill:colors[p],opacity:.7});
+  }
+ }
+ el("circle",{cx:210,cy:210,r:27,fill:"#172338",stroke:"#fff","stroke-width":2});
+ el("text",{x:210,y:216,"text-anchor":"middle","font-size":19,fill:"#ffdb58"}).textContent="🏆";
+ players.forEach((pl,p)=>pl.tokens.forEach((v,t)=>{
+  const [x,y]=tokenPos(p,t);
+  const c=el("circle",{cx:x,cy:y,r:8.5,fill:colors[p],stroke:"#fff","stroke-width":2,
+   tabindex:0,role:"button",style:"cursor:pointer"});
+  c.addEventListener("click",()=>moveToken(p,t));
+  c.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();moveToken(p,t)}});
+  if(p===turn&&rolled&&legal(p,t))el("circle",{cx:x,cy:y,r:12,fill:"none",stroke:"#111827","stroke-width":2});
+ }));
+ for(let p=0;p<4;p++){
+  document.getElementById("score"+p).textContent=
+   players[p].tokens.filter(v=>v===57).length;
+ }
+}
+function legal(p,t){
+ const v=players[p].tokens[t];
+ if(v===57)return false;
+ if(v===-1)return dice===6;
+ return v+dice<=57;
+}
+function say(msg){document.getElementById("status").textContent=msg}
 function rollDice(){
-  if(busy)return;
-  busy=true;
-  const n=Math.floor(Math.random()*6)+1;
-  document.getElementById("dice").textContent=diceFaces[n-1];
-  document.getElementById("status").textContent=colors[turn]+" ne "+n+" nikala!";
-  if(n===6){
-    scores[turn]++;
-    document.getElementById("s"+turn).textContent=scores[turn];
+ if(rolled||finished)return;
+ dice=Math.floor(Math.random()*6)+1;
+ document.getElementById("dice").textContent=["","⚀","⚁","⚂","⚃","⚄","⚅"][dice];
+ rolled=true;
+ const moves=players[turn].tokens.some((v,t)=>legal(turn,t));
+ draw();
+ if(!moves){
+  say(names[turn]+" rolled "+dice+". No valid move.");
+  setTimeout(()=>nextTurn(),900);
+ }else{
+  say(names[turn]+": "+dice+" aaya! Apni highlighted goti par tap karo.");
+ }
+}
+function moveToken(p,t){
+ if(finished||!rolled||p!==turn||!legal(p,t))return;
+ const pl=players[p],old=pl.tokens[t];
+ pl.tokens[t]=old===-1?0:old+dice;
+ let captured=false;
+ if(pl.tokens[t]<52){
+  const spot=(pl.start+pl.tokens[t])%52;
+  if(!safe.includes(spot)){
+   players.forEach((other,q)=>{
+    if(q===p)return;
+    other.tokens=other.tokens.map(v=>{
+     if(v>=0&&v<52&&(other.start+v)%52===spot){captured=true;return -1}
+     return v;
+    });
+   });
   }
-  setTimeout(()=>{
-    if(n!==6)turn=(turn+1)%4;
-    document.getElementById("status").textContent=
-      colors[turn]+" ki baari!";
-    busy=false;
-  },700);
+ }
+ const won=pl.tokens.every(v=>v===57);
+ draw();
+ if(won){
+  finished=true;
+  say("🏆 "+pl.name+" wins! New Game dabao.");
+  return;
+ }
+ if(captured)say("🎉 Goti kaat di! "+pl.name+" ko extra turn.");
+ else say(pl.name+" ne goti chal di.");
+ if(dice===6||captured){
+  rolled=false;dice=0;
+  setTimeout(()=>say(pl.name+" ki baari! Dice roll karo."),700);
+ }else setTimeout(()=>nextTurn(),700);
 }
-
+function nextTurn(){
+ if(finished)return;
+ turn=(turn+1)%4;rolled=false;dice=0;
+ document.getElementById("dice").textContent="🎲";
+ draw();say(names[turn]+" ki baari! Dice roll karo.");
+}
 function resetGame(){
-  turn=0;scores=[0,0,0,0];busy=false;
-  document.getElementById("dice").textContent="🎲";
-  scores.forEach((s,i)=>document.getElementById("s"+i).textContent=s);
-  document.getElementById("status").textContent="Red ki baari!";
+ players.forEach(p=>p.tokens=[-1,-1,-1,-1]);
+ turn=0;dice=0;rolled=false;finished=false;
+ document.getElementById("dice").textContent="🎲";
+ draw();say("Red ki baari! Dice roll karo.");
 }
+draw();
 </script>
 </body>
 </html>
