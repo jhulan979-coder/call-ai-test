@@ -70,6 +70,14 @@ button{border:0;border-radius:12px;padding:13px;font-size:16px;font-weight:bold;
 </style>
 </head>
 <body>
+
+<div id="startScreen">
+  <div class="logo">🎲</div>
+  <h1>LUDO STAR</h1>
+  <p>Play with Friends<br>2–4 Players • Offline</p>
+  <button id="playGame" onclick="startGame()">▶ PLAY NOW</button>
+</div>
+ 
 <h1>🎲 LUDO STAR</h1>
 <div class="sub">OFFLINE • 2–4 PLAYERS • SAME PHONE</div>
 
@@ -123,6 +131,12 @@ function tokenPos(p,t){
  if(v<52)return pos((players[p].start+v)%52);
  return lanePos(p,v-51);
 }
+ 
+function startGame(){
+  document.getElementById("startScreen").style.display="none";
+  resetGame();
+}
+ 
 function draw(){
  const s=document.getElementById("board");
  s.innerHTML="";
