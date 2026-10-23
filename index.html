@@ -1,191 +1,74 @@
-
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#100b1c">
-<title>AI GF Partner</title>
-<style>
-*{box-sizing:border-box}
-body{margin:0;background:#100b1c;color:#fff;font-family:Arial,sans-serif}
-header{padding:17px;text-align:center;background:#21152f;font-size:22px;font-weight:bold}
-header span{color:#ff76b7}
-main{max-width:600px;margin:auto;padding:16px 14px 90px}
-.page{display:none}.page.active{display:block}
-.center{text-align:center}
-.avatar{width:150px;height:150px;border-radius:50%;margin:18px auto;background:linear-gradient(135deg,#ffb1d8,#a17bff);display:grid;place-items:center;box-shadow:0 0 35px #bb68ff55;animation:float 3s infinite}
-.face{width:92px;height:108px;border-radius:48%;background:#f1c0a5;position:relative;border:4px solid #53314e}
-.hair{position:absolute;top:-5px;left:-4px;right:-4px;height:44px;background:#392039;border-radius:55% 55% 35% 30%}
-.eyes{position:absolute;top:46px;left:13px;right:13px;display:flex;justify-content:space-between}
-.eyes i{width:9px;height:7px;background:#392039;border-radius:50%;animation:blink 4s infinite}
-.mouth{position:absolute;left:32px;top:72px;width:20px;height:8px;border-bottom:3px solid #a34465;border-radius:50%}
-.talking .mouth{animation:talk .2s infinite alternate}
-h1{font-size:26px}
-p{color:#c8b9d5;line-height:1.5}
-.card{background:#21172e;border:1px solid #493357;padding:16px;border-radius:17px;margin:15px 0}
-button{border:0;border-radius:12px;padding:12px 15px;background:linear-gradient(120deg,#ff76b7,#b38aff);font-weight:bold;color:#25132f;cursor:pointer}
-.secondary{background:#382647;color:white;border:1px solid #604775}
-input,select{width:100%;padding:13px;margin:7px 0;background:#120d1c;color:white;border:1px solid #493357;border-radius:10px}
-#messages{display:flex;flex-direction:column;gap:10px;margin:15px 0}
-.msg{padding:12px;border-radius:13px;max-width:90%;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
-.ai{align-self:flex-start;background:#30213e}
-.user{align-self:flex-end;background:#7849a3}
-.composer{display:flex;gap:7px;position:sticky;bottom:70px;background:#100b1c;padding:8px 0}
-.composer input{flex:1;min-width:0}
-nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;background:#21152f;border-top:1px solid #493357;padding:9px;gap:8px}
-nav button{flex:1;max-width:180px}
-.note{font-size:12px;color:#bbaac8}
-@keyframes float{50%{transform:translateY(-5px)}}
-@keyframes blink{0%,46%,50%,100%{transform:scaleY(1)}48%{transform:scaleY(.1)}}
-@keyframes talk{to{height:13px}}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private AI Companion</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
+    </style>
 </head>
-<body>
-<header>AI<span>♡</span> GF Partner</header>
-<main>
-<section id="home" class="page active center">
- <div class="avatar" id="avatar"><div class="face"><div class="hair"></div><div class="eyes"><i></i><i></i></div><div class="mouth"></div></div></div>
- <h1>Aanya 💗</h1>
- <p>Tumhari AI companion — Hindi aur Hinglish mein baat karo.</p>
- <button onclick="show('chat')">💬 Chat shuru karo</button>
- <button class="secondary" onclick="voiceInput()">🎙 Bolo</button>
- <div class="card"><b>✨ Features</b><p>AI Chat · Voice reply · Animated avatar · Chat history</p></div>
-</section>
+<body class="flex flex-col h-screen max-w-md mx-auto p-2">
+    <!-- Header -->
+    <header class="flex justify-between items-center bg-slate-800 p-4 rounded-t-xl shadow-md border-b border-slate-700">
+        <h1 class="text-lg font-bold text-pink-400">❤️ My Private AI</h1>
+        <span class="text-xs bg-green-500 text-black px-2 py-1 rounded-full font-semibold">Online</span>
+    </header>
 
-<section id="chat" class="page">
- <h1>Aanya se baat karo 💜</h1>
- <div id="messages"></div>
- <div class="composer">
-  <input id="message" placeholder="Message likho..." onkeydown="if(event.key==='Enter')send()">
-  <button class="secondary" onclick="voiceInput()">🎙</button>
-  <button onclick="send()">➤</button>
- </div>
- <button class="secondary" onclick="speakLast()">🔊 Dobara suno</button>
- <button class="secondary" onclick="clearChat()">Clear chat</button>
-</section>
+    <!-- Chat Box -->
+    <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-900/50">
+        <div class="flex justify-start">
+            <div class="bg-slate-800 text-slate-200 p-3 rounded-2xl max-w-[80%] text-sm shadow">
+                नमस्ते! मैं यहाँ सिर्फ तुम्हारे लिए हूँ। आज क्या बात करनी है?
+            </div>
+        </div>
+    </div>
 
-<section id="settings" class="page">
- <h1>Settings ⚙️</h1>
- <div class="card">
-  <label>Gemini API key</label>
-  <input id="apiKey" type="password" placeholder="API key yahan paste karo">
-  <label>Language</label>
-  <select id="language"><option>Hinglish</option><option>Hindi</option><option>English</option></select>
-  <button onclick="saveSettings()">Save settings</button>
-  <p id="status" class="note">API key save karke AI chat use karo.</p>
-  <p class="note">API key ko GitHub par upload mat karna. App ke andar save ki gayi key bhi poori tarah secure nahi hoti.</p>
- </div>
-</section>
-</main>
+    <!-- Input Area -->
+    <div class="p-3 bg-slate-800 rounded-b-xl flex gap-2 border-t border-slate-700">
+        <input type="text" id="user-input" placeholder="यहाँ अपनी बात लिखें..." 
+            class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-pink-500 text-white">
+        <button onclick="sendMessage()" 
+            class="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">
+            भेजें
+        </button>
+    </div>
 
-<nav>
- <button onclick="show('home')">🏠 Home</button>
- <button onclick="show('chat')">💬 Chat</button>
- <button onclick="show('settings')">⚙️ Settings</button>
-</nav>
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
 
-<script>
-const $=id=>document.getElementById(id);
-let lastReply='';
-let busy=false;
+        function appendMessage(text, sender) {
+            const isUser = sender === 'user';
+            const div = document.createElement('div');
+            div.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+            div.innerHTML = `
+                <div class="${isUser ? 'bg-pink-600 text-white' : 'bg-slate-800 text-slate-200'} p-3 rounded-2xl max-w-[80%] text-sm shadow">
+                    ${text}
+                </div>
+            `;
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
 
-function show(page){
- document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===page));
-}
-function saveSettings(){
- try{
-  localStorage.setItem('gf_key',$('apiKey').value.trim());
-  localStorage.setItem('gf_language',$('language').value);
-  $('status').textContent='Settings saved on this device.';
- }catch(e){$('status').textContent='Save nahi ho paya.'}
-}
-function add(role,text){
- const el=document.createElement('div');
- el.className='msg '+role;
- el.textContent=text;
- $('messages').appendChild(el);
- $('messages').scrollTop=$('messages').scrollHeight;
- try{
-  const h=JSON.parse(localStorage.getItem('gf_history')||'[]');
-  h.push({role,text});
-  localStorage.setItem('gf_history',JSON.stringify(h.slice(-50)));
- }catch(e){}
-}
-function loadHistory(){
- try{
-  $('apiKey').value=localStorage.getItem('gf_key')||'';
-  $('language').value=localStorage.getItem('gf_language')||'Hinglish';
-  const h=JSON.parse(localStorage.getItem('gf_history')||'[]');
-  h.forEach(m=>{
-   const el=document.createElement('div');
-   el.className='msg '+m.role;
-   el.textContent=m.text;
-   $('messages').appendChild(el);
-  });
- }catch(e){}
- if(!$('messages').children.length)add('ai','Namaste! 😊 Main Aanya hoon. Settings mein Gemini API key save karke mujhse baat shuru karo.');
-}
-function animateTalking(on){
- $('avatar').classList.toggle('talking',on);
-}
-function say(text){
- if(!('speechSynthesis' in window))return;
- speechSynthesis.cancel();
- const u=new SpeechSynthesisUtterance(text);
- const lang=$('language').value;
- u.lang=lang==='English'?'en-IN':'hi-IN';
- u.rate=.95;
- u.pitch=1.12;
- u.onstart=()=>animateTalking(true);
- u.onend=()=>animateTalking(false);
- speechSynthesis.speak(u);
-}
-async function send(){
- if(busy)return;
- const text=$('message').value.trim();
- if(!text)return;
- $('message').value='';
- add('user',text);
- const key=localStorage.getItem('gf_key')||'';
- if(!key){
-  lastReply='Pehle Settings kholo, Gemini API key save karo, phir dobara message bhejo. 😊';
-  add('ai',lastReply);say(lastReply);return;
- }
- busy=true;
- let loading=document.createElement('div');
- loading.className='msg ai';loading.textContent='Aanya reply likh rahi hai…';
- $('messages').appendChild(loading);
- try{
-  const lang=localStorage.getItem('gf_language')||'Hinglish';
-  const prompt='You are Aanya, a friendly and caring virtual AI companion. Reply naturally in '+lang+'. Be warm, respectful, and concise. Never claim to be a real human. User says: '+text;
-  const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+encodeURIComponent(key),{
-   method:'POST',
-   headers:{'Content-Type':'application/json'},
-   body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
-  });
-  const data=await response.json();
-  if(!response.ok)throw new Error(data.error?.message||'API request failed');
-  lastReply=data.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('').trim()||'Sorry, reply nahi mila.';
-  loading.remove();add('ai',lastReply);say(lastReply);
- }catch(e){
-  loading.remove();
-  lastReply='AI connection nahi ho paya: '+e.message;
-  add('ai',lastReply);
- }finally{busy=false}
-}
-function voiceInput(){
- const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
- if(!SR){add('ai','Voice input is browser par available nahi hai. Android WebView mein native speech support add karna hoga.');return}
- const r=new SR();r.lang='hi-IN';r.onresult=e=>{$('message').value=e.results[0][0].transcript;send()};r.onerror=()=>add('ai','Voice input nahi chala. Microphone permission check karo.');r.start();
-}
-function speakLast(){if(lastReply)say(lastReply)}
-function clearChat(){
- if(!confirm('Puri chat history clear karein?'))return;
- localStorage.removeItem('gf_history');$('messages').innerHTML='';
- lastReply='';add('ai','Chat clear ho gayi. 😊 Phir se baat shuru karein?');
-}
-loadHistory();
-</script>
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            appendMessage(text, 'user');
+            userInput.value = '';
+
+            // यहाँ आप अपनी API या लोकल सर्वर का लिंक जोड़ सकते हैं
+            // फिलहाल यह एक सिम्युलेटेड पर्सनल रिस्पॉन्स दे रहा है
+            setTimeout(() => {
+                appendMessage("मैं तुम्हारी हर बात समझती हूँ... बताओ आगे क्या करना है?", 'ai');
+            }, 1000);
+        }
+
+        userInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
 </body>
 </html>
