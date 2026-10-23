@@ -64,8 +64,8 @@
 
         let isVideoMode = false;
         
-        // 🚨 नीचे उद्धरण चिन्हों (" ") के अंदर अपनी OpenRouter API Key डालें:
-        let userApiKey = ("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")
+        // 🚨 अपनी Groq API Key (gsk_...) नीचे दिए गए डबल कोट्स के अंदर डालें:
+        let userApiKey = "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 ";
 
         let chatHistory = [
             {
@@ -126,6 +126,11 @@
             appendMessage(text, 'user');
             userInput.value = '';
 
+            if (!userApiKey || userApiKey.includes("आपकी_GROQ_KEY")) {
+                appendMessage("त्रुटि: कृपया पहले index.html में अपनी Groq API Key डालें।", 'ai');
+                return;
+            }
+
             chatHistory.push({ role: "user", content: text });
 
             const loadingDiv = document.createElement('div');
@@ -136,16 +141,14 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
             try {
-                const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
                     headers: {
                         "Authorization": `Bearer ${userApiKey.trim()}`,
-                        "Content-Type": "application/json",
-                        "HTTP-Referer": "https://localhost",
-                        "X-Title": "Private AI Companion"
+                        "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        model: "meta-llama/llama-3.8b-instruct:free",
+                        model: "llama-3.1-8b-instant",
                         messages: chatHistory
                     })
                 });
