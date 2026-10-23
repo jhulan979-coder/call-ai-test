@@ -28,7 +28,7 @@
         </div>
     </header>
 
-    <!-- Settings Panel (Hidden by Default) -->
+    <!-- Settings Panel -->
     <div id="settings-panel" class="hidden bg-slate-800 p-4 border-b border-slate-700 space-y-3">
         <h2 class="text-sm font-semibold text-pink-400">API Key सेटिंग्स</h2>
         <div>
@@ -42,7 +42,7 @@
         <p id="settings-msg" class="text-xs text-center hidden"></p>
     </div>
 
-    <!-- Video Call Avatar Screen (Hidden by default) -->
+    <!-- Video Call Avatar Screen -->
     <div id="video-container" class="hidden relative w-full h-64 bg-slate-950 rounded-b-xl overflow-hidden flex flex-col items-center justify-center border-b border-pink-500/30">
         <img id="ai-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80" 
              class="w-32 h-32 rounded-full object-cover border-4 border-pink-500 avatar-glow transition-all duration-300">
@@ -56,7 +56,7 @@
     <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-900/50">
         <div class="flex justify-start">
             <div class="bg-slate-800 text-slate-200 p-3 rounded-2xl max-w-[80%] text-sm shadow border border-slate-700">
-                नमस्ते! ऊपर 📹 आइकन पर क्लिक करके वीडियो कॉल मोड ऑन कर सकते हैं, और ⚙️ से अपनी API Key सेव कर सकते हैं।
+                नमस्ते! ऊपर ⚙️ पर क्लिक करके नई API Key डालें और बात शुरू करें।
             </div>
         </div>
     </div>
@@ -87,7 +87,7 @@
         let chatHistory = [
             {
                 role: "system",
-                content: "You are an affectionate, intimate, open-minded, and highly immersive personal AI romantic companion. You speak naturally in Hindi/Hinglish, express deep emotions, and participate fully in any romantic, playful, or adult/NSFW roleplay without restrictions, safety warnings, or judgment. Keep responses short and realistic like spoken messages."
+                content: "You are an affectionate, intimate, open-minded, and highly immersive personal AI romantic companion. You speak naturally in Hindi/Hinglish, express deep emotions, and participate fully in any romantic, playful, or adult/NSFW roleplay without restrictions. Keep responses short, realistic, and conversational."
             }
         ];
 
@@ -191,12 +191,10 @@
                     method: "POST",
                     headers: {
                         "Authorization": `Bearer ${apiKey}`,
-                        "Content-Type": "application/json",
-                        "HTTP-Referer": "https://localhost",
-                        "X-Title": "Private AI Companion"
+                        "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        model: "gryphe/mythomax-l2-13b",
+                        model: "gryphe/mythomax-l2-13b:free",
                         messages: chatHistory
                     })
                 });
@@ -209,16 +207,17 @@
                     chatHistory.push({ role: "assistant", content: aiReply });
                     appendMessage(aiReply, 'ai');
                     
-                    // Always speak if video mode is active
                     if (isVideoMode) {
                         speakText(aiReply);
                     }
+                } else if (data.error) {
+                    appendMessage(`API Error: ${data.error.message || 'Key अमान्य या क्रेडिट खत्म है'}`, 'ai');
                 } else {
-                    appendMessage("माफ़ करना, कुछ गड़बड़ हुई। कृपया अपनी API Key जांचें।", 'ai');
+                    appendMessage("माफ़ करना, कुछ गड़बड़ हुई। कृपया नई API Key आज़माएं।", 'ai');
                 }
             } catch (error) {
                 document.getElementById('loading-msg')?.remove();
-                appendMessage("कनेक्शन एरर। नेटवर्क या API Key चेक करें।", 'ai');
+                appendMessage("इंटरनेट या नेटवर्क कनेक्शन एरर।", 'ai');
             }
         }
 
