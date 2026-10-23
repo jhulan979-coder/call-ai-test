@@ -26,17 +26,16 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v2
-        with:
-          accept-android-sdk-licenses: true
+      - name: Accept Android SDK Licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Build APK with Cordova
         run: |
           npm install -g cordova
           cordova create cordova_project com.privateai.app "MyAICompanion"
           
-          # index.html और फाइलों को Cordova www फोल्डर में कॉपी करना
+          # HTML/JS फाइलों को Cordova www फोल्डर में कॉपी करना
           cp index.html cordova_project/www/ || true
           
           cd cordova_project
@@ -48,3 +47,4 @@ jobs:
         with:
           name: PrivateAI-Companion-APK
           path: cordova_project/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          
