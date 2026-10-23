@@ -65,7 +65,7 @@
         let isVideoMode = false;
         
         // 🚨 अपनी Groq API Key (gsk_...) नीचे दिए गए डबल कोट्स के अंदर डालें:
-        let userApiKey = "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 ";
+        let userApiKey = "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";
 
         let chatHistory = [
             {
@@ -148,7 +148,7 @@
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        model: "llama-3.1-8b-instant",
+                        model: "llama3-8b-8192",
                         messages: chatHistory
                     })
                 });
