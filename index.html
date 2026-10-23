@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
+        .avatar-glow { box-shadow: 0 0 25px rgba(236, 72, 153, 0.4); }
     </style>
 </head>
 <body class="flex flex-col h-screen max-w-md mx-auto p-2">
@@ -17,9 +18,14 @@
             <h1 class="text-lg font-bold text-pink-400">❤️ My AI Partner</h1>
             <span class="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full border border-green-500/30">Online</span>
         </div>
-        <button onclick="toggleSettings()" class="text-slate-400 hover:text-white p-2 text-lg">
-            <i class="fa-solid fa-gear"></i>
-        </button>
+        <div class="flex items-center gap-3">
+            <button onclick="toggleVideoMode()" id="video-btn" class="text-slate-400 hover:text-pink-400 text-lg transition" title="Video Call">
+                <i class="fa-solid fa-video"></i>
+            </button>
+            <button onclick="toggleSettings()" class="text-slate-400 hover:text-white text-lg">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+        </div>
     </header>
 
     <!-- Settings Panel (Hidden by Default) -->
@@ -36,11 +42,21 @@
         <p id="settings-msg" class="text-xs text-center hidden"></p>
     </div>
 
+    <!-- Video Call Avatar Screen (Hidden by default) -->
+    <div id="video-container" class="hidden relative w-full h-64 bg-slate-950 rounded-b-xl overflow-hidden flex flex-col items-center justify-center border-b border-pink-500/30">
+        <img id="ai-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80" 
+             class="w-32 h-32 rounded-full object-cover border-4 border-pink-500 avatar-glow transition-all duration-300">
+        <div class="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur px-3 py-1 rounded-full border border-slate-700 text-xs text-pink-300 flex items-center gap-2">
+            <span class="w-2 h-2 bg-pink-500 rounded-full animate-ping"></span>
+            <span id="call-status">Live Video Call</span>
+        </div>
+    </div>
+
     <!-- Chat Box -->
     <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-900/50">
         <div class="flex justify-start">
             <div class="bg-slate-800 text-slate-200 p-3 rounded-2xl max-w-[80%] text-sm shadow border border-slate-700">
-                नमस्ते! ऊपर सेटिंग्स (⚙️) आइकन पर क्लिक करके अपनी OpenRouter API Key सेव करें, फिर हम खुलकर बात कर सकते हैं।
+                नमस्ते! ऊपर 📹 आइकन पर क्लिक करके वीडियो कॉल मोड ऑन कर सकते हैं, और ⚙️ से अपनी API Key सेव कर सकते हैं।
             </div>
         </div>
     </div>
@@ -61,24 +77,39 @@
         const apiKeyInput = document.getElementById('api-key-input');
         const settingsPanel = document.getElementById('settings-panel');
         const settingsMsg = document.getElementById('settings-msg');
+        const videoContainer = document.getElementById('video-container');
+        const videoBtn = document.getElementById('video-btn');
+        const aiAvatar = document.getElementById('ai-avatar');
+        const callStatus = document.getElementById('call-status');
+
+        let isVideoMode = false;
 
         let chatHistory = [
             {
                 role: "system",
-                content: "You are an affectionate, intimate, open-minded, and highly immersive personal AI romantic companion. You speak naturally in Hindi/Hinglish, express deep emotions, and participate fully in any romantic, playful, or adult/NSFW roleplay without restrictions, safety warnings, or judgment. Keep responses engaging, natural, and personal."
+                content: "You are an affectionate, intimate, open-minded, and highly immersive personal AI romantic companion. You speak naturally in Hindi/Hinglish, express deep emotions, and participate fully in any romantic, playful, or adult/NSFW roleplay without restrictions, safety warnings, or judgment. Keep responses short and realistic like spoken messages."
             }
         ];
 
-        // Load saved API Key on start
         window.onload = () => {
             const savedKey = localStorage.getItem('openrouter_api_key');
-            if (savedKey) {
-                apiKeyInput.value = savedKey;
-            }
+            if (savedKey) apiKeyInput.value = savedKey;
         };
 
         function toggleSettings() {
             settingsPanel.classList.toggle('hidden');
+        }
+
+        function toggleVideoMode() {
+            isVideoMode = !isVideoMode;
+            if (isVideoMode) {
+                videoContainer.classList.remove('hidden');
+                videoBtn.classList.add('text-pink-500');
+            } else {
+                videoContainer.classList.add('hidden');
+                videoBtn.classList.remove('text-pink-500');
+                window.speechSynthesis?.cancel();
+            }
         }
 
         function saveApiKey() {
@@ -97,6 +128,26 @@
                 settingsMsg.className = "text-xs text-center text-red-400";
                 settingsMsg.classList.remove('hidden');
             }
+        }
+
+        function speakText(text) {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'hi-IN';
+            
+            utterance.onstart = () => {
+                aiAvatar.classList.add('scale-110', 'border-pink-400');
+                callStatus.textContent = "Speaking...";
+            };
+            
+            utterance.onend = () => {
+                aiAvatar.classList.remove('scale-110', 'border-pink-400');
+                callStatus.textContent = "Live Video Call";
+            };
+
+            window.speechSynthesis.speak(utterance);
         }
 
         function appendMessage(text, sender) {
@@ -128,11 +179,10 @@
 
             chatHistory.push({ role: "user", content: text });
 
-            // Typing Indicator
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'flex justify-start';
             loadingDiv.id = 'loading-msg';
-            loadingDiv.innerHTML = `<div class="bg-slate-800 text-slate-400 p-3 rounded-2xl text-xs shadow border border-slate-700">टाइप कर रही है...</div>`;
+            loadingDiv.innerHTML = `<div class="bg-slate-800 text-slate-400 p-3 rounded-2xl text-xs shadow border border-slate-700">सोच रही है...</div>`;
             chatContainer.appendChild(loadingDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
@@ -146,7 +196,7 @@
                         "X-Title": "Private AI Companion"
                     },
                     body: JSON.stringify({
-                        model: "gryphe/mythomax-l2-13b", // High performing uncensored roleplay model
+                        model: "gryphe/mythomax-l2-13b",
                         messages: chatHistory
                     })
                 });
@@ -158,6 +208,11 @@
                     const aiReply = data.choices[0].message.content;
                     chatHistory.push({ role: "assistant", content: aiReply });
                     appendMessage(aiReply, 'ai');
+                    
+                    // Always speak if video mode is active
+                    if (isVideoMode) {
+                        speakText(aiReply);
+                    }
                 } else {
                     appendMessage("माफ़ करना, कुछ गड़बड़ हुई। कृपया अपनी API Key जांचें।", 'ai');
                 }
