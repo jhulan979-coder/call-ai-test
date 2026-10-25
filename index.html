@@ -64,15 +64,12 @@
 
         let isVideoMode = false;
         
-        // 🚨 अपनी Groq API Key (gsk_...) नीचे दिए गए डबल कोट्स के अंदर डालें:
-        let userApiKey = "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";
+        // 🚨 अपनी Hugging Face API Key (hf_...) नीचे दिए गए कोट्स के अंदर डालें:
+        let userApiKey = "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";
 
-        let chatHistory = [
-            {
-                role: "system",
-                content: "You are an affectionate, intimate, open-minded, and highly immersive personal AI romantic companion. You speak naturally in Hindi/Hinglish, express deep emotions, and participate fully in any romantic, playful, or adult/NSFW roleplay without restrictions. Keep responses short and conversational."
-            }
-        ];
+        let systemPrompt = "You are an affectionate, intimate, open-minded, and highly immersive personal AI romantic companion. You speak naturally in Hindi/Hinglish, express deep emotions, and participate fully in any romantic, playful, or adult/NSFW roleplay without restrictions. Keep responses short and conversational.";
+
+        let messagesList = [];
 
         function toggleVideoMode() {
             isVideoMode = !isVideoMode;
@@ -126,12 +123,12 @@
             appendMessage(text, 'user');
             userInput.value = '';
 
-            if (!userApiKey || userApiKey.includes("आपकी_GROQ_KEY")) {
-                appendMessage("त्रुटि: कृपया पहले index.html में अपनी Groq API Key डालें।", 'ai');
+            if (!userApiKey || userApiKey.includes("HuggingFace")) {
+                appendMessage("त्रुटि: कृपया पहले index.html में अपनी Hugging Face API Key डालें।", 'ai');
                 return;
             }
 
-            chatHistory.push({ role: "user", content: text });
+            messagesList.push({ role: "user", content: text });
 
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'flex justify-start';
@@ -140,34 +137,41 @@
             chatContainer.appendChild(loadingDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
+            // Format prompt for Llama 3
+            let fullPrompt = `<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n${systemPrompt}<|eot_id|>`;
+            messagesList.forEach(m => {
+                fullPrompt += `<|start_header_id|>${m.role === 'user' ? 'user' : 'assistant'}<|end_header_id|>\n${m.content}<|eot_id|>`;
+            });
+            fullPrompt += `<|start_header_id|>assistant<|end_header_id|>\n`;
+
             try {
-                const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                const response = await fetch("https://api-inference.huggingface.co/models/meta-llama/Llama-3.1-8B-Instruct", {
                     method: "POST",
                     headers: {
                         "Authorization": `Bearer ${userApiKey.trim()}`,
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        model: "llama-3.3-70b-versatile",
-                        messages: chatHistory
+                        inputs: fullPrompt,
+                        parameters: { max_new_tokens: 250, return_full_text: false }
                     })
                 });
 
                 document.getElementById('loading-msg')?.remove();
 
                 const data = await response.json();
-                if (data.choices && data.choices[0]) {
-                    const aiReply = data.choices[0].message.content;
-                    chatHistory.push({ role: "assistant", content: aiReply });
+                if (Array.isArray(data) && data[0] && data[0].generated_text) {
+                    let aiReply = data[0].generated_text.trim();
+                    messagesList.push({ role: "assistant", content: aiReply });
                     appendMessage(aiReply, 'ai');
                     
                     if (isVideoMode) {
                         speakText(aiReply);
                     }
                 } else if (data.error) {
-                    appendMessage(`API Error: ${data.error.message}`, 'ai');
+                    appendMessage(`API Error: ${data.error}`, 'ai');
                 } else {
-                    appendMessage("माफ़ करना, कोई जवाब नहीं मिला।", 'ai');
+                    appendMessage("माफ़ करना, सर्वर व्यस्त है। दोबारा कोशिश करें।", 'ai');
                 }
             } catch (error) {
                 document.getElementById('loading-msg')?.remove();
