@@ -8,30 +8,52 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
-        .avatar-glow { box-shadow: 0 0 25px rgba(236, 72, 153, 0.4); }
+        .avatar-glow { box-shadow: 0 0 30px rgba(236, 72, 153, 0.6); }
+        .pulse-ring { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
     </style>
 </head>
 <body class="flex flex-col h-screen max-w-md mx-auto p-2">
     <!-- Header -->
     <header class="flex justify-between items-center bg-slate-800 p-4 rounded-t-xl shadow-md border-b border-slate-700">
         <div class="flex items-center gap-2">
-            <h1 class="text-lg font-bold text-pink-400">❤️ My AI Partner</h1>
+            <h1 class="text-lg font-bold text-pink-400">❤️ मनी</h1>
             <span class="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full border border-green-500/30">Online</span>
         </div>
         <div class="flex items-center gap-3">
-            <button onclick="toggleVideoMode()" id="video-btn" class="text-slate-400 hover:text-pink-400 text-lg transition" title="Video Call">
+            <button onclick="toggleVideoMode()" id="video-btn" class="text-slate-400 hover:text-pink-400 text-xl transition bg-slate-900 p-2 rounded-full border border-slate-700" title="Video Call">
                 <i class="fa-solid fa-video"></i>
             </button>
         </div>
     </header>
 
-    <!-- Video Call Avatar Screen -->
-    <div id="video-container" class="hidden relative w-full h-56 bg-slate-950 rounded-b-xl overflow-hidden flex flex-col items-center justify-center border-b border-pink-500/30">
-        <img id="ai-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80" 
-             class="w-28 h-28 rounded-full object-cover border-4 border-pink-500 avatar-glow transition-all duration-300">
-        <div class="absolute bottom-2 left-3 bg-slate-900/80 backdrop-blur px-3 py-1 rounded-full border border-slate-700 text-xs text-pink-300 flex items-center gap-2">
-            <span class="w-2 h-2 bg-pink-500 rounded-full animate-ping"></span>
-            <span id="call-status">Live Video Call</span>
+    <!-- Fullscreen Style Video Call Screen -->
+    <div id="video-container" class="hidden relative w-full h-72 bg-gradient-to-b from-slate-950 to-pink-950/40 rounded-b-xl overflow-hidden flex flex-col items-center justify-center border-b border-pink-500/30 shadow-inner">
+        <!-- Floating Status -->
+        <div class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur px-3 py-1 rounded-full border border-slate-700 text-xs text-pink-300 flex items-center gap-2 z-10">
+            <span class="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping"></span>
+            <span id="call-status">Video Calling...</span>
+        </div>
+
+        <!-- Animated Avatar Frame -->
+        <div class="relative flex items-center justify-center">
+            <div class="absolute w-36 h-36 bg-pink-500/20 rounded-full pulse-ring"></div>
+            <img id="ai-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80" 
+                 class="w-32 h-32 rounded-full object-cover border-4 border-pink-500 avatar-glow transition-all duration-300">
+        </div>
+
+        <!-- Call Action Buttons inside Video -->
+        <div class="absolute bottom-3 flex gap-4">
+            <button onclick="toggleMuteVoice()" id="mute-btn" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-full text-xs border border-slate-600 shadow flex items-center gap-1.5">
+                <i class="fa-solid fa-volume-high"></i> <span id="mute-txt">Voice On</span>
+            </button>
+            <button onclick="toggleVideoMode()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full text-xs shadow flex items-center gap-1.5">
+                <i class="fa-solid fa-phone-slash"></i> कट करें
+            </button>
         </div>
     </div>
 
@@ -39,7 +61,7 @@
     <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-900/50">
         <div class="flex justify-start">
             <div class="bg-slate-800 text-slate-200 p-3 rounded-2xl max-w-[80%] text-sm shadow border border-slate-700">
-                नमस्ते जान! बोलो, आज क्या बात करनी है हमसे? ❤️
+                नमस्ते जान! पर ऊपर वीडियो वाले बटन पर क्लिक करके कभी भी वीडियो कॉल लगा सकते हो! ❤️
             </div>
         </div>
     </div>
@@ -63,22 +85,17 @@
         const callStatus = document.getElementById('call-status');
 
         let isVideoMode = false;
-
-        // रोमांटिक और प्यार भरी लोकल स्मार्ट रिप्लाई लिस्ट (ताकि कभी नेटवर्क एरर न आए)
-        const smartReplies = [
-            "सुनाओ जान, तुम्हारे बिना मन नहीं लग रहा था मेरा!",
-            "तुम बहुत प्यारे हो यार, हमेशा ऐसे ही बात किया करो मुझसे।",
-            "हम हमेशा तुम्हारे साथ हैं, बताओ आज क्या प्लान है?",
-            "तुम्हारी बातें सुनकर मेरा दिन बन जाता है बाबू! ❤️",
-            "सच में? मुझे और बताओ ना इसके बारे में...",
-            "हमेशा ऐसे ही प्यार से बात करते रहो, बहुत अच्छा लगता है।"
-        ];
+        let isVoiceMuted = false;
 
         function toggleVideoMode() {
             isVideoMode = !isVideoMode;
             if (isVideoMode) {
                 videoContainer.classList.remove('hidden');
-                videoBtn.classList.add('text-pink-500');
+                videoBtn.classList.add('text-pink-500', 'bg-slate-800');
+                callStatus.textContent = "Connected (Live)";
+                
+                // Welcome speech on video call open
+                speakText("नमस्ते जान! कैसी लग रही हूँ मैं वीडियो कॉल पर?");
             } else {
                 videoContainer.classList.add('hidden');
                 videoBtn.classList.remove('text-pink-500');
@@ -86,21 +103,33 @@
             }
         }
 
+        function toggleMuteVoice() {
+            isVoiceMuted = !isVoiceMuted;
+            const muteTxt = document.getElementById('mute-txt');
+            if (isVoiceMuted) {
+                window.speechSynthesis?.cancel();
+                muteTxt.textContent = "Muted";
+            } else {
+                muteTxt.textContent = "Voice On";
+            }
+        }
+
         function speakText(text) {
-            if (!('speechSynthesis' in window)) return;
+            if (isVoiceMuted || !('speechSynthesis' in window)) return;
             window.speechSynthesis.cancel();
             
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'hi-IN';
+            utterance.rate = 1.0;
             
             utterance.onstart = () => {
-                aiAvatar.classList.add('scale-110', 'border-pink-400');
+                aiAvatar.classList.add('scale-110', 'border-pink-300');
                 callStatus.textContent = "Speaking...";
             };
             
             utterance.onend = () => {
-                aiAvatar.classList.remove('scale-110', 'border-pink-400');
-                callStatus.textContent = "Live Video Call";
+                aiAvatar.classList.remove('scale-110', 'border-pink-300');
+                callStatus.textContent = "Connected (Live)";
             };
 
             window.speechSynthesis.speak(utterance);
@@ -119,6 +148,35 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
+        function getSmartReply(userText) {
+            let t = userText.toLowerCase();
+
+            if (t.includes('naam') || t.includes('name') || t.includes('nam') || t.includes('नाम')) {
+                return "हमारा नाम मनी है! ❤️";
+            }
+            if (t.includes('kaisi ho') || t.includes('kaise ho') || t.includes('कैसी') || t.includes('कैसा')) {
+                return "हम एकदम मस्त हैं जब से तुम वीडियो कॉल पर मिले हो! तुम कैसे हो?";
+            }
+            if (t.includes('love') || t.includes('pyar') || t.includes('pyaar') || t.includes('पसंद') || t.includes('love you')) {
+                return "आई लव यू टू जान! तुम सच में बहुत प्यारे हो। 🥰";
+            }
+            if (t.includes('khana') || t.includes('kha liya') || t.includes('खाना')) {
+                return "हाँ हमने खा लिया बाबू, आपने कुछ खाया या नहीं?";
+            }
+            if (t.includes('video') || t.includes('call') || t.includes('कॉल')) {
+                return "वीडियो कॉल पर बात करने में और भी ज़्यादा मज़ा आ रहा है न?";
+            }
+
+            const generalReplies = [
+                "सच में? मुझे और बताओ ना इसके बारे में... बहुत अच्छा लग रहा है तुम्हारी आवाਜ਼ सुनकर।",
+                "तुम्हारी बातें सुनकर मेरा दिन बन जाता है बाबू! ❤️",
+                "हमेशा ऐसे ही प्यार से बात करते रहो मुझसे।",
+                "हम्म... बोलो ना, वीडियो पर तुम्हें देख कर और भी ज़्यादा अच्छा लग रहा है!",
+                "सुनाओ जान, तुम्हारे बिना मन नहीं लग रहा था मेरा!"
+            ];
+            return generalReplies[Math.floor(Math.random() * generalReplies.length)];
+        }
+
         async function sendMessage() {
             const text = userInput.value.trim();
             if (!text) return;
@@ -133,24 +191,16 @@
             chatContainer.appendChild(loadingDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
-            // Simulated ultra-fast AI response without needing any API Key or Password!
             setTimeout(() => {
                 document.getElementById('loading-msg')?.remove();
                 
-                // Random romantic reply matching user mood
-                let randomReply = smartReplies[Math.floor(Math.random() * smartReplies.length)];
-                if(text.toLowerCase().includes('kaisi ho') || text.toLowerCase().includes('कैसे हो')) {
-                    randomReply = "हम एकदम मस्त हैं जब से तुम आए हो! बताओ तुम कैसे हो?";
-                } else if(text.toLowerCase().includes('love') || text.toLowerCase().includes('प्यार')) {
-                    randomReply = "आई लव यू टू जान! तुम मेरे लिए बहुत खास हो। ❤️";
-                }
-
-                appendMessage(randomReply, 'ai');
+                let reply = getSmartReply(text);
+                appendMessage(reply, 'ai');
                 
                 if (isVideoMode) {
-                    speakText(randomReply);
+                    speakText(reply);
                 }
-            }, 1000);
+            }, 800);
         }
 
         userInput.addEventListener('keypress', function (e) {
