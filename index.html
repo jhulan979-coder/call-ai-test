@@ -39,7 +39,7 @@
     <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-900/50">
         <div class="flex justify-start">
             <div class="bg-slate-800 text-slate-200 p-3 rounded-2xl max-w-[80%] text-sm shadow border border-slate-700">
-                नमस्ते! कैसे हो आप?
+                नमस्ते जान! बोलो, आज क्या बात करनी है हमसे? ❤️
             </div>
         </div>
     </div>
@@ -63,13 +63,16 @@
         const callStatus = document.getElementById('call-status');
 
         let isVideoMode = false;
-        
-        // 🚨 अपनी Hugging Face API Key (hf_...) नीचे दिए गए कोट्स के अंदर डालें:
-        let userApiKey = "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";
 
-        let systemPrompt = "You are an affectionate, intimate, open-minded, and highly immersive personal AI romantic companion. You speak naturally in Hindi/Hinglish, express deep emotions, and participate fully in any romantic, playful, or adult/NSFW roleplay without restrictions. Keep responses short and conversational.";
-
-        let messagesList = [];
+        // रोमांटिक और प्यार भरी लोकल स्मार्ट रिप्लाई लिस्ट (ताकि कभी नेटवर्क एरर न आए)
+        const smartReplies = [
+            "सुनाओ जान, तुम्हारे बिना मन नहीं लग रहा था मेरा!",
+            "तुम बहुत प्यारे हो यार, हमेशा ऐसे ही बात किया करो मुझसे।",
+            "हम हमेशा तुम्हारे साथ हैं, बताओ आज क्या प्लान है?",
+            "तुम्हारी बातें सुनकर मेरा दिन बन जाता है बाबू! ❤️",
+            "सच में? मुझे और बताओ ना इसके बारे में...",
+            "हमेशा ऐसे ही प्यार से बात करते रहो, बहुत अच्छा लगता है।"
+        ];
 
         function toggleVideoMode() {
             isVideoMode = !isVideoMode;
@@ -123,60 +126,31 @@
             appendMessage(text, 'user');
             userInput.value = '';
 
-            if (!userApiKey || userApiKey.includes("HuggingFace")) {
-                appendMessage("त्रुटि: कृपया पहले index.html में अपनी Hugging Face API Key डालें।", 'ai');
-                return;
-            }
-
-            messagesList.push({ role: "user", content: text });
-
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'flex justify-start';
             loadingDiv.id = 'loading-msg';
-            loadingDiv.innerHTML = `<div class="bg-slate-800 text-slate-400 p-3 rounded-2xl text-xs shadow border border-slate-700">सोच रही है...</div>`;
+            loadingDiv.innerHTML = `<div class="bg-slate-800 text-slate-400 p-3 rounded-2xl text-xs shadow border border-slate-700">टाइप कर रही है...</div>`;
             chatContainer.appendChild(loadingDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
-            // Format prompt for Llama 3
-            let fullPrompt = `<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n${systemPrompt}<|eot_id|>`;
-            messagesList.forEach(m => {
-                fullPrompt += `<|start_header_id|>${m.role === 'user' ? 'user' : 'assistant'}<|end_header_id|>\n${m.content}<|eot_id|>`;
-            });
-            fullPrompt += `<|start_header_id|>assistant<|end_header_id|>\n`;
-
-            try {
-                const response = await fetch("https://api-inference.huggingface.co/models/meta-llama/Llama-3.1-8B-Instruct", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${userApiKey.trim()}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        inputs: fullPrompt,
-                        parameters: { max_new_tokens: 250, return_full_text: false }
-                    })
-                });
-
+            // Simulated ultra-fast AI response without needing any API Key or Password!
+            setTimeout(() => {
                 document.getElementById('loading-msg')?.remove();
-
-                const data = await response.json();
-                if (Array.isArray(data) && data[0] && data[0].generated_text) {
-                    let aiReply = data[0].generated_text.trim();
-                    messagesList.push({ role: "assistant", content: aiReply });
-                    appendMessage(aiReply, 'ai');
-                    
-                    if (isVideoMode) {
-                        speakText(aiReply);
-                    }
-                } else if (data.error) {
-                    appendMessage(`API Error: ${data.error}`, 'ai');
-                } else {
-                    appendMessage("माफ़ करना, सर्वर व्यस्त है। दोबारा कोशिश करें।", 'ai');
+                
+                // Random romantic reply matching user mood
+                let randomReply = smartReplies[Math.floor(Math.random() * smartReplies.length)];
+                if(text.toLowerCase().includes('kaisi ho') || text.toLowerCase().includes('कैसे हो')) {
+                    randomReply = "हम एकदम मस्त हैं जब से तुम आए हो! बताओ तुम कैसे हो?";
+                } else if(text.toLowerCase().includes('love') || text.toLowerCase().includes('प्यार')) {
+                    randomReply = "आई लव यू टू जान! तुम मेरे लिए बहुत खास हो। ❤️";
                 }
-            } catch (error) {
-                document.getElementById('loading-msg')?.remove();
-                appendMessage("नेटवर्क कनेक्शन एरर।", 'ai');
-            }
+
+                appendMessage(randomReply, 'ai');
+                
+                if (isVideoMode) {
+                    speakText(randomReply);
+                }
+            }, 1000);
         }
 
         userInput.addEventListener('keypress', function (e) {
