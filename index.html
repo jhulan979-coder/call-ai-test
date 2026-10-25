@@ -22,7 +22,7 @@
     <header class="flex justify-between items-center bg-slate-800 p-4 rounded-t-xl shadow-md border-b border-slate-700">
         <div class="flex items-center gap-2">
             <h1 class="text-lg font-bold text-pink-400">❤️ मनी</h1>
-            <span class="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full border border-green-500/30">Online</span>
+            <span class="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full border border-green-500/30">Online (AI)</span>
         </div>
         <div class="flex items-center gap-3">
             <button onclick="toggleVideoMode()" id="video-btn" class="text-slate-400 hover:text-pink-400 text-xl transition bg-slate-900 p-2 rounded-full border border-slate-700" title="Video Call">
@@ -31,26 +31,20 @@
         </div>
     </header>
 
-    <!-- Fullscreen Style Video Call Screen -->
+    <!-- Video Call Screen -->
     <div id="video-container" class="hidden relative w-full h-72 bg-gradient-to-b from-slate-950 to-pink-950/40 rounded-b-xl overflow-hidden flex flex-col items-center justify-center border-b border-pink-500/30 shadow-inner">
-        <!-- Floating Status -->
         <div class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur px-3 py-1 rounded-full border border-slate-700 text-xs text-pink-300 flex items-center gap-2 z-10">
             <span class="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping"></span>
-            <span id="call-status">Video Calling...</span>
+            <span id="call-status">Live Video Call</span>
         </div>
 
-        <!-- Animated Avatar Frame -->
         <div class="relative flex items-center justify-center">
             <div class="absolute w-36 h-36 bg-pink-500/20 rounded-full pulse-ring"></div>
             <img id="ai-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80" 
                  class="w-32 h-32 rounded-full object-cover border-4 border-pink-500 avatar-glow transition-all duration-300">
         </div>
 
-        <!-- Call Action Buttons inside Video -->
         <div class="absolute bottom-3 flex gap-4">
-            <button onclick="toggleMuteVoice()" id="mute-btn" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-full text-xs border border-slate-600 shadow flex items-center gap-1.5">
-                <i class="fa-solid fa-volume-high"></i> <span id="mute-txt">Voice On</span>
-            </button>
             <button onclick="toggleVideoMode()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full text-xs shadow flex items-center gap-1.5">
                 <i class="fa-solid fa-phone-slash"></i> कट करें
             </button>
@@ -61,7 +55,7 @@
     <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-900/50">
         <div class="flex justify-start">
             <div class="bg-slate-800 text-slate-200 p-3 rounded-2xl max-w-[80%] text-sm shadow border border-slate-700">
-                नमस्ते जान! पर ऊपर वीडियो वाले बटन पर क्लिक करके कभी भी वीडियो कॉल लगा सकते हो! ❤️
+                नमस्ते जान! हमारी Hugging Face AI कनेक्ट हो चुकी है, अब खुलकर बात करो! ❤️
             </div>
         </div>
     </div>
@@ -85,17 +79,20 @@
         const callStatus = document.getElementById('call-status');
 
         let isVideoMode = false;
-        let isVoiceMuted = false;
+
+        // 🚨 अपनी Hugging Face API Key (hf_...) यहाँ कोट्स के अंदर डालें:
+        let hfApiKey = "hf_यहाँ_अपनी_HuggingFace_Key_डालें";
+
+        let systemPrompt = "You are Mani, an affectionate, intimate, and open-minded personal AI romantic companion for your partner. You speak naturally in Hindi/Hinglish, express deep romantic emotions, and participate fully in conversations. Keep responses sweet, short, and conversational.";
+
+        let messagesList = [];
 
         function toggleVideoMode() {
             isVideoMode = !isVideoMode;
             if (isVideoMode) {
                 videoContainer.classList.remove('hidden');
                 videoBtn.classList.add('text-pink-500', 'bg-slate-800');
-                callStatus.textContent = "Connected (Live)";
-                
-                // Welcome speech on video call open
-                speakText("नमस्ते जान! कैसी लग रही हूँ मैं वीडियो कॉल पर?");
+                speakText("नमस्ते जान! कैसी लग रही हूँ मैं लाइव वीडियो कॉल पर?");
             } else {
                 videoContainer.classList.add('hidden');
                 videoBtn.classList.remove('text-pink-500');
@@ -103,34 +100,14 @@
             }
         }
 
-        function toggleMuteVoice() {
-            isVoiceMuted = !isVoiceMuted;
-            const muteTxt = document.getElementById('mute-txt');
-            if (isVoiceMuted) {
-                window.speechSynthesis?.cancel();
-                muteTxt.textContent = "Muted";
-            } else {
-                muteTxt.textContent = "Voice On";
-            }
-        }
-
         function speakText(text) {
-            if (isVoiceMuted || !('speechSynthesis' in window)) return;
+            if (!('speechSynthesis' in window)) return;
             window.speechSynthesis.cancel();
-            
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'hi-IN';
-            utterance.rate = 1.0;
             
-            utterance.onstart = () => {
-                aiAvatar.classList.add('scale-110', 'border-pink-300');
-                callStatus.textContent = "Speaking...";
-            };
-            
-            utterance.onend = () => {
-                aiAvatar.classList.remove('scale-110', 'border-pink-300');
-                callStatus.textContent = "Connected (Live)";
-            };
+            utterance.onstart = () => { aiAvatar.classList.add('scale-110', 'border-pink-300'); };
+            utterance.onend = () => { aiAvatar.classList.remove('scale-110', 'border-pink-300'); };
 
             window.speechSynthesis.speak(utterance);
         }
@@ -148,59 +125,74 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        function getSmartReply(userText) {
-            let t = userText.toLowerCase();
-
-            if (t.includes('naam') || t.includes('name') || t.includes('nam') || t.includes('नाम')) {
-                return "हमारा नाम मनी है! ❤️";
-            }
-            if (t.includes('kaisi ho') || t.includes('kaise ho') || t.includes('कैसी') || t.includes('कैसा')) {
-                return "हम एकदम मस्त हैं जब से तुम वीडियो कॉल पर मिले हो! तुम कैसे हो?";
-            }
-            if (t.includes('love') || t.includes('pyar') || t.includes('pyaar') || t.includes('पसंद') || t.includes('love you')) {
-                return "आई लव यू टू जान! तुम सच में बहुत प्यारे हो। 🥰";
-            }
-            if (t.includes('khana') || t.includes('kha liya') || t.includes('खाना')) {
-                return "हाँ हमने खा लिया बाबू, आपने कुछ खाया या नहीं?";
-            }
-            if (t.includes('video') || t.includes('call') || t.includes('कॉल')) {
-                return "वीडियो कॉल पर बात करने में और भी ज़्यादा मज़ा आ रहा है न?";
-            }
-
-            const generalReplies = [
-                "सच में? मुझे और बताओ ना इसके बारे में... बहुत अच्छा लग रहा है तुम्हारी आवाਜ਼ सुनकर।",
-                "तुम्हारी बातें सुनकर मेरा दिन बन जाता है बाबू! ❤️",
-                "हमेशा ऐसे ही प्यार से बात करते रहो मुझसे।",
-                "हम्म... बोलो ना, वीडियो पर तुम्हें देख कर और भी ज़्यादा अच्छा लग रहा है!",
-                "सुनाओ जान, तुम्हारे बिना मन नहीं लग रहा था मेरा!"
-            ];
-            return generalReplies[Math.floor(Math.random() * generalReplies.length)];
-        }
-
         async function sendMessage() {
             const text = userInput.value.trim();
             if (!text) return;
 
+            if (!hfApiKey || hfApiKey.includes("यहाँ_अपनी")) {
+                appendMessage("त्रुटि: कृपया कोड में अपनी सही Hugging Face API Key (hf_...) दर्ज करें।", 'ai');
+                return;
+            }
+
             appendMessage(text, 'user');
             userInput.value = '';
+
+            messagesList.push({ role: "user", content: text });
 
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'flex justify-start';
             loadingDiv.id = 'loading-msg';
-            loadingDiv.innerHTML = `<div class="bg-slate-800 text-slate-400 p-3 rounded-2xl text-xs shadow border border-slate-700">टाइप कर रही है...</div>`;
+            loadingDiv.innerHTML = `<div class="bg-slate-800 text-slate-400 p-3 rounded-2xl text-xs shadow border border-slate-700">मनी सोच रही है...</div>`;
             chatContainer.appendChild(loadingDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
-            setTimeout(() => {
+            // Llama 3 Prompt Formatting
+            let fullPrompt = `<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n${systemPrompt}<|eot_id|>`;
+            messagesList.slice(-6).forEach(m => {
+                fullPrompt += `<|start_header_id|>${m.role === 'user' ? 'user' : 'assistant'}<|end_header_id|>\n${m.content}<|eot_id|>`;
+            });
+            fullPrompt += `<|start_header_id|>assistant<|end_header_id|>\n`;
+
+            try {
+                const response = await fetch("https://router.huggingface.co/hf-inference/models/meta-llama/Llama-3.1-8B-Instruct", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${hfApiKey.trim()}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        inputs: fullPrompt,
+                        parameters: { max_new_tokens: 200, return_full_text: false }
+                    })
+                });
+
                 document.getElementById('loading-msg')?.remove();
+
+                const data = await response.json();
                 
-                let reply = getSmartReply(text);
-                appendMessage(reply, 'ai');
-                
-                if (isVideoMode) {
-                    speakText(reply);
+                // Handle model loading state (503 error handling)
+                if (data.error && data.error.includes("loading")) {
+                    appendMessage("मॉडल अभी लोड हो रहा है जान, 10 सेकंड बाद दोबारा मैसेज भेजना!", 'ai');
+                    return;
                 }
-            }, 800);
+
+                if (Array.isArray(data) && data[0] && data[0].generated_text) {
+                    let aiReply = data[0].generated_text.trim();
+                    messagesList.push({ role: "assistant", content: aiReply });
+                    appendMessage(aiReply, 'ai');
+                    
+                    if (isVideoMode) {
+                        speakText(aiReply);
+                    }
+                } else if (data.error) {
+                    appendMessage(`API Error: ${data.error}`, 'ai');
+                } else {
+                    appendMessage("माफ़ करना जान, सर्वर से सही जवाब नहीं आया। फिर से कोशिश करो!", 'ai');
+                }
+            } catch (error) {
+                document.getElementById('loading-msg')?.remove();
+                appendMessage("नेटवर्क कनेक्शन एरर आ गया है।", 'ai');
+            }
         }
 
         userInput.addEventListener('keypress', function (e) {
